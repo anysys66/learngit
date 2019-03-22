@@ -6,7 +6,7 @@
 他们自作聪明地在每个文件开头添加了0xefbbbf（十六进制）的字符，你会遇到很多不可思议的问题，
 比如，网页第一行可能会显示一个“?”，明明正确的程序一编译就报语法错误)
 
-文件添加至仓库 ： git add
+文件添加至暂存区 ： git add 多个文件一次性提交 git add --all
 把文件提交至仓库 ： git commit -m "这次提交的说明"
 查看git仓库状态： git status
 比较仓库异同 ： git diff readme.txt 比较单个文件的异同
@@ -28,6 +28,11 @@ f99df108ce600674eb454c000b97de523ba2eacf add distributed
 回退至某个版本 git reset --hard 325a464  (325a464为版本索引，用git reflog查看)
 
 用git diff HEAD -- readme.txt命令可以查看工作区和版本库里面最新版本的区别：
+1、git diff 比较的是工作区和暂存区的差别
+
+2、git diff –cached 比较的是暂存区和版本库的差别
+
+3、git diff HEAD 可以查看工作区和版本库的差别
 
 放弃工作区的修改将工作区撤销回复至暂存区或版本库的状态 ：git checkout -- readme.txt
 
