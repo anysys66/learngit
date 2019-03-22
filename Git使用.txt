@@ -1,0 +1,33 @@
+创建文件夹命令： mkdir learngit  (learngit为文件夹名字，位置为当前位置)
+显示当前文件夹位置命令： pwd
+将当前文件夹编程git可以管理的仓库： git init
+(千万不要使用Windows自带的记事本编辑任何文本文件。
+原因是Microsoft开发记事本的团队使用了一个非常弱智的行为来保存UTF-8编码的文件，
+他们自作聪明地在每个文件开头添加了0xefbbbf（十六进制）的字符，你会遇到很多不可思议的问题，
+比如，网页第一行可能会显示一个“?”，明明正确的程序一编译就报语法错误)
+
+文件添加至仓库 ： git add
+把文件提交至仓库 ： git commit -m "这次提交的说明"
+查看git仓库状态： git status
+比较仓库异同 ： git diff readme.txt
+查看当前提交历史状态 ： git log
+查看提交历史状态 （单列）： git log --pretty=oneline
+
+Git必须知道当前版本是哪个版本，在Git中，用HEAD表示当前版本：
+$ git log --pretty=oneline
+325a464c2a4b4a5b73de8410bb19a0da69e93e84 (HEAD -> master) append GPL 这个带HEAD的是当前版本
+f99df108ce600674eb454c000b97de523ba2eacf add distributed
+86eac3245964da446de547e019c6dd3c99b2748c wrote a readme file
+
+回退至上一个版本 ： git reset --hard HEAD^
+回退至前100个版本 ： git reset --hard HEAD~100
+
+
+查看所有历史提交命令记录以及对应版本引用 git reflog
+
+回退至某个版本 git reset --hard 325a464  (325a464为版本索引，用git reflog查看)
+
+用git diff HEAD -- readme.txt命令可以查看工作区和版本库里面最新版本的区别：
+
+放弃工作区的修改将工作区撤销回复至暂存区或版本库的状态 ：git checkout -- readme.txt
+
