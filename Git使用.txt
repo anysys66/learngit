@@ -9,7 +9,7 @@
 文件添加至仓库 ： git add
 把文件提交至仓库 ： git commit -m "这次提交的说明"
 查看git仓库状态： git status
-比较仓库异同 ： git diff readme.txt
+比较仓库异同 ： git diff readme.txt 比较单个文件的异同
 查看当前提交历史状态 ： git log
 查看提交历史状态 （单列）： git log --pretty=oneline
 
@@ -31,3 +31,7 @@ f99df108ce600674eb454c000b97de523ba2eacf add distributed
 
 放弃工作区的修改将工作区撤销回复至暂存区或版本库的状态 ：git checkout -- readme.txt
 
+用命令git reset HEAD <file>可以把暂存区的修改撤销掉（unstage），重新放回工作区：
+ 例：git reset HEAD readme.txt
+ git reset命令既可以回退版本，同时也可以把暂存区的修改回退到工作区。当我们用HEAD时，表示最新的版本。
+ 
