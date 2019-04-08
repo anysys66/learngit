@@ -1,0 +1,4 @@
+int在于Integer == 比较时 编译器会自动拆箱(无论Integer是否new否，因为Integer的构造函数是把构造的值赋给final int value；所以还是两个基本数据类型的比较)：
+结果为 int == Integer.intValue; 这代表为两个基本数据类型的比较,所以只要值一致,返回为true；
+
+Integer有IntegerCache缓存池 位于IntegerCache类的常量池；范围为-128~127。

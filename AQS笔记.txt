@@ -1,0 +1,168 @@
+1.ReentrantLock加锁：
+
+final void lock() {
+if (compareAndSetState(0, 1))
+        setExclusiveOwnerThread(Thread.currentThread());
+else
+        acquire(1);
+}
+首先调用unsafe.compareAndSetState(0,1) 用过JNI调用c++代码 通过cpu指令进行 CAS操作：判断state是否是0（表示当前锁未被占用），
+如果是0则把它置为1，设置为1后表示当前线程获取锁成功，
+
+然后通过ReetrantLock的内部类的 static final class NonfairSync extends Sync -》abstract static class Sync extends AbstractQueuedSynchronizer-》
+public abstract class AbstractOwnableSynchronizer implements java.io.Serializable
+的AbstractOwnableSynchronizer类的setExclusiveOwnerThread(Thread thread)方法; 设置当前的线程为独占线程。
+
+如果设置失败，代表请求的lock对象的state值不为0(锁已经被占用) 进入else：
+调用acquire方法尝试获取锁：
+AbstractQueuedSynchronizer类中 acquire()方法为：
+public final void acquire(int arg) {
+        if (!tryAcquire(arg) &&
+            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+            selfInterrupt();
+    }
+	
+此方法虽然只有几行代码，但是调用链比较复杂,一个个方法来看：先调用
+protected boolean tryAcquire(int arg) {
+        throw new UnsupportedOperationException();
+    }
+由于默认子类重写，由Sync类的子类static final class NonfairSync extends Sync 重写：
+protected final boolean tryAcquire(int acquires) {
+            return nonfairTryAcquire(acquires);
+        }
+直接调用其父类： Sync类的nonfairTryAcquire(int acquires)方法：
+final boolean nonfairTryAcquire(int acquires) {
+			//获取当前线程
+            final Thread current = Thread.currentThread();
+			//获取AQS的sate值(sate自AQS继承)
+            int c = getState();
+			//有可能在执行上面代码的时候锁释放，所以再进行一次判断，如果sate值的为0，代表没有线程占用当前lock对象，
+			//尝试CAS进行设置sate获取锁，如果获取到了，则将当前线程设置为独占线程，并返回true，如果没有设置成功,说明其他线程已经抢先占用了锁，代码直接往下执行。
+            if (c == 0) {
+                if (compareAndSetState(0, acquires)) {
+                    setExclusiveOwnerThread(current);
+                    return true;
+                }
+            }//如果在当前线程已经通过lock方法获取到了锁的情况下,再调用lock方法,会进入下面代码,进行可重入操作
+			//判断当前线程是否已经获取锁
+            else if (current == getExclusiveOwnerThread()) {
+				//可重入次数+1 
+                int nextc = c + acquires;
+				
+                if (nextc < 0) // overflow 如果出现sate值为负 代表当前执行代码error
+                    throw new Error("Maximum lock count exceeded");
+					//sate值+1(可重入的特性),这里要注意的是为什么不用CAS操作sate,因为lock锁已经被当前线程获取,所以其他线程是不能对sate设值的,所以无需用CAS操作
+                setState(nextc);
+                return true;
+            }
+            return false;
+        }
+如果tryAcquire(arg)方法执行结果为false,也就是当前线程没有获取到锁，抢锁失败,有可能有多个抢锁失败的线程执行acquireQueued(addWaiter(Node.EXCLUSIVE), arg))方法，
+我么先来看addWaiter(Node.EXCLUSIVE)方法：
+/**
+ * 将新节点和当前线程关联并且入队列
+ * @param mode 独占/共享
+ * @return 新节点
+ */
+private Node addWaiter(Node mode) {
+//将当前线程封装为Node并设置模式(独占 or 共享) 这里为独占式节点 。Node.EXCLUSIVE 为AQS的Node的内部类的独占标识(Node类中的static final Node EXCLUSIVE = null;)
+    Node node = new Node(Thread.currentThread(), mode);
+// 获取尾节点引用
+    Node pred = tail;
+// 尾节点不为空,说明队列已经初始化过
+    if (pred != null) {
+	//新的节点入队,将之前的尾节点设置为入队节点的前置节点
+        node.prev = pred;
+// 调用CAS操作设置新节点为尾节点,这里有可能失败。
+        if (compareAndSetTail(pred, node)) {
+//		将之前的尾节点的后置节点设置为新的入队节点
+            pred.next = node;
+//入队成功直接返回 无需再调用enq方法
+	return node;
+        }
+    }
+// 尾节点为空,或者CAS设置新节点入队失败,调用enq(node)方法自旋入队
+    enq(node);
+return node;
+}
+enq(node)方法：(此方法考虑到可能有多条线程争相执行此方法,所以此方法采用经典的CAS自旋操作进行队列初始化,保证多线程下不会出现线程安全问题)
+/**
+ *@param node 新入队的节点
+ * @return 尾节点
+ */
+private Node enq(final Node node) {
+        for (;;) {
+		//获取队列尾节点的引用
+            Node t = tail;
+			//如果尾节点为空,
+            if (t == null) { // CAS操作进行队列初始化，操作成功将头节点设置为尾节点,进行下一次自旋,不成功说明有其他抢锁失败的线程已经进行将队列初始化,代码进入else。
+				//这里需要注意的是:有可能初始化队列的线程,被其他线程抢先一步入队,这种情况,初始化队列的线程入队失败后,进行下一次CAS自旋操作进行入队。
+                if (compareAndSetHead(new Node()))
+                    tail = head;
+            } else {//尾节点不为空,队列已经初始化,将新增节点入队。
+                node.prev = t;
+				//如果这里CAS入队操作失败了,说明其他线程抢先入队,尾节点改变。进行下一次自旋。
+                if (compareAndSetTail(t, node)) {
+                    t.next = node;
+                    return t;
+                }
+            }
+        }
+    }
+执行到	acquireQueued(addWaiter(Node.EXCLUSIVE), arg)方法的时候说明 新的抢锁线程已经入队成功,然后我们看下acquireQueued方法：
+
+final boolean acquireQueued(final Node node, int arg) {
+        boolean failed = true;//同步标志
+        try {
+            boolean interrupted = false;//线程中断标志
+			
+			//开始自旋：
+            for (;;) {
+                final Node p = node.predecessor();//获取入队节点的前置节点
+                if (p == head && tryAcquire(arg)) {//如果前置节点为头节点,则去尝试获取锁(这里的头节点有可能是第一次初始化的空节点)
+                    //如果获取锁成功,将节点设置为头节点,并将之前的头结点设置为nul方便GC,方法直接返回中断标志
+					
+					setHead(node);
+                    p.next = null; // help GC
+                    failed = false;
+                    return interrupted;
+                }
+				//判断新的节点是否需要挂起,如果shouldParkAfterFailedAcquire方法返回false开始下一次循环。
+				//如果返回true，代表此节点可以挂起。执行parkAndCheckInterrupt方法将线程挂起
+                if (shouldParkAfterFailedAcquire(p, node) &&
+                    parkAndCheckInterrupt()) 
+                    interrupted = true;
+            }
+        } finally {
+		//出现异常,取消此节点。
+            if (failed)
+                cancelAcquire(node);
+        }
+    }
+shouldParkAfterFailedAcquire方法用来判断新的入队节点是否可以挂起
+/**
+ * pred node的前置节点
+ * node 新入队的节点
+ */
+ private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+        int ws = pred.waitStatus;//获取同步状态
+        if (ws == Node.SIGNAL)//如果为signal那么直接返回ture,代表可挂起
+            
+            return true;
+        if (ws > 0) {
+            
+            do {
+			//如果同步状态>0,代表前驱节点为CANCELLED状态,需对队列进行整理,清除CANCELLED状态的节点.
+                node.prev = pred = pred.prev;
+            } while (pred.waitStatus > 0);
+            pred.next = node;
+        } else {
+            //尝试CAS设置前驱节点的同步状态为SIGNAL
+            compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+        }
+		//返回false进行下一次自旋。
+        return false;
+    }	
+	
+		
+		
