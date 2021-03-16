@@ -1,0 +1,112 @@
+js组成：ECMAScript(可以理解为web浏览器脚本语言规范,但实际不限于web浏览器)
+ DOM(文档对象模型) 
+ BOM (浏览器对象模型)
+
+js中有五种基本数据类型：Undefined Null Boolean Number String
+      一种复杂数据类型(引用类型): Object
+	  
+
+在使用var声明变量但未对其加以初始化时,这个变量的值就是undefined。
+例：var age;
+	alert(age); // undefined
+
+对于没有声明的变量,使用会产生错误。
+例：// var age
+	alert(age); //产生错误
+	
+var 变量, 推荐显式地初始化变量,因为 typeof 变量的时候能返回 undefined 说明这个变量还没有被声明
+ 例：var message; //变量声明
+	//下面这个变量未声明
+	//var age 
+	
+	alert(typeof message); // undefined
+	alert(typeof age);  // undefined
+	
+正确示范: var a = "";
+		var b = 0;
+		var c = true;
+		var d = null;
+
+Null 类型,需要注意的是,null值表示一个空对象指针,而使用 typeof 操作符检测null值时会返回object
+例：var car =null;
+    alert(typeof car);  // object
+如果定义变量准备用于保存对象类型，那么最好将该变量初始化为null
+例 ： if(car != null){
+
+		}
+实际上,undefined值是派生(继承)自null值的。因此 ECMA-262规定对他们的相等性测试要返回true
+例： alert(null == undefined); // true
+
+Boolean类型,需要注意的是Boolean()转换函数
+例：
+var message = "a";
+if(message){  //这里自动执行了相应的Boolean()转换 ，String类型转换成Boolean类型,若String不为"" 返回true,否则返回false
+
+	alert("Value is true");
+}	
+
+Number类型,使用 IEEE 754 双精度 64 位浮点数格式表示整数和浮点数值,(小端模式:偏移量为63的1bit表示符号位,0x62~0x52的11bit表示整数位,0x51~0x0的52bit表示小数位)
+当十进制小数的二进制表示的有限数字超过 52 位时,在 JavaScript 里是不能精确存储的
+(十进制小数转换为二进制小数：用2乘十进制小数，可以得到积，将积的整数部分取出，再用2乘余下的小数部分，又得到一个积，
+再将积的整数部分取出，如此进行，直到积中的小数部分为零，此时0或1为二进制的最后一位。或者达到所要求的精度为止。)
+例:  // 0.1 转化为二进制
+0.0 0011 0011 0011 0011...(0011无限循环）
+
+关于数值范围,console.log(Number.MAX_VALUE); // 1.7976931348623157e+308
+			 console.log(Number.MIN_VALUE); // 5e-324
+			 如果某次计算超过了数值范围,如果是正数,返回 Infinity ,如果市负数,返回 -Infinity
+			 Infinity/-Infinity 无法再次进行运算,
+			 例: var a = Number.MAX_VALUE*100;
+				 console.log(a);  //Infinity
+				 console.log(a+100); //Infinity
+				 
+				 判断一个变量是否超过数值范围,使用isFinite();
+				 例: console.log(isFinite(Number.MAX_VALUE*100)); //false
+				 
+十六进制表示: var a = 0xA; //十六进制的10
+
+NaN，即非数值(Not a Number) ，isNaN() 函数用于判断是否是数值类型,NaN == NaN //false 
+
+数值转换,Number() 用于所有类型的数值转换,但字符串类型的转换并不尽如人意(这三个函数会自动去除空格)
+例:Number(Boolean); // true:1 false:0; 与数据库中tinyint(1)类型 一致 
+	Number("fsf23"); //NaN
+	Number(""); // 0
+	Number("00011"); //11
+	Number(0xFFF); //4095
+	
+parseInt()，parseFloat()是专门用于字符串的转换
+例:parseInt("1231fsf"); //1231
+	parseInt(true); // NaN
+	parseInt(""); //NaN
+	parseInt(0xFFF); //4095
+
+实际,在ECMAScript 3 JavaScript引擎中,"070"被当做八进制字面量,而 ECMAScript5中认为是0,
+所以为了版本兼容，parseInt()第二个参数是表示多少进制,
+例: parseInt("070",10); //70
+
+String类型,采用16位Unicode编码,(emmm....Unicode4.0采用4个字节,最多可以表示2^32个字符,看后续会不会跟进吧)
+js中"" 和'' 都可以用来表示字符串类型，而且没有什么区别
+例: console.log('0'=="0"); //true
+
+注意.字符串类型和java一样是不可变的,也就是js虚拟机对于拼接字符串的处理是和jvm一致
+
+关于 ++i 和 i++， js中也是和java一样,归根结底还是编译问题,编译出的汇编语句顺序,是先相加还是先赋值
+例: var a =10; 
+	var b =a++;
+	var c =++a;
+	这里a等于11,b等于10,c等于11,
+	第二句等于10的原因是因为编译出的语句,是逐句执行的,
+	先是从a的地址取出10,然后把10+1然后把11赋值给a的地址然后把10赋值给b
+	白话(不严谨): a=10,10+1,a=11,b=a
+
+
+
+
+
+	
+
+
+
+
+
+
