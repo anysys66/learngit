@@ -1,0 +1,8 @@
+checkPoint技术解决了以下问题：
+缩短数据库恢复时间
+缓冲池不够用时，将脏页刷新到磁盘
+重做日志不可用时，刷新脏页
+
+LSN(Log Sequence Number)：
+LSN是8字节数字，单位是字节。每个页有LSN，重做日志中也有LSN
+可以通过SHOW ENGIENE INNODB STATUS
