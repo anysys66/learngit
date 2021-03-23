@@ -5,4 +5,5 @@ checkPoint技术解决了以下问题：
 
 LSN(Log Sequence Number)：
 LSN是8字节数字，单位是字节。每个页有LSN，重做日志中也有LSN
-可以通过SHOW ENGIENE INNODB STATUS
+可以通过SHOW ENGINE INNODB STATUS 查看
+
